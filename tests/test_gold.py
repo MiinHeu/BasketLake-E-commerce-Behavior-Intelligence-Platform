@@ -7,7 +7,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from math import isclose
 
-from pyspark.sql import Window, functions as F
+from pyspark.sql import Window
+from pyspark.sql import functions as F
 
 from src.processing import silver_to_gold as gold
 from src.processing.bronze_to_silver import apply_r9_session
@@ -101,14 +102,16 @@ def test_dimensions_values(spark):
 
 def test_daily_and_hourly_values(spark):
     df = fixture(spark)
-    source = df.collect()
+    # Collect UTC strings: PySpark converts TimestampType to host-local datetimes.
+    source = df.withColumn('event_ts', F.date_format('event_ts', 'yyyy-MM-dd HH:mm:ss')).collect()
     for builder, keys in [(gold.build_agg_daily, ['event_date', 'category_l1']),
                           (gold.build_agg_hourly, ['day_of_week', 'event_hour'])]:
         actual = keyed(builder(df), keys)
         groups = defaultdict(list)
         for e in source:
+            utc_ts = datetime.strptime(e.event_ts, '%Y-%m-%d %H:%M:%S')
             key = ((e.event_date, e.category_l1) if len(keys) == 2 and keys[0] == 'event_date'
-                   else ((e.event_ts.isoweekday() % 7) + 1, e.event_ts.hour))
+                   else ((utc_ts.isoweekday() % 7) + 1, utc_ts.hour))
             groups[key].append(e)
         assert set(actual) == set(groups)
         for key, events in groups.items():

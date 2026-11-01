@@ -3,6 +3,7 @@ Purchase filter -> category sum(price)/count -> revenue sort -> actual values.
 No join. Tier must match Silver manifest. Dedicated results only, no shared log.
 """
 from __future__ import annotations
+
 import argparse
 import csv
 import hashlib
@@ -15,8 +16,10 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from urllib.request import urlopen
+
 from pyspark import StorageLevel
 from pyspark.sql import functions as F
+
 from src.common.config import get_paths, load_config
 from src.common.input_manifest import silver_fingerprint, verify_silver_manifest
 from src.common.spark_session import get_spark

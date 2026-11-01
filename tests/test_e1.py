@@ -1,6 +1,5 @@
 """Tiny deterministic E1 tests; no production lake and no third-party test runner."""
 import csv
-import json
 import tempfile
 from pathlib import Path
 
